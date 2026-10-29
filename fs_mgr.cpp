@@ -1335,15 +1335,13 @@ class CheckpointManager {
                     return false;
                 }
 
+                // Wait for ueventd to create the device node: mount_all reads it right away
+                // (partition_wiped, e2fsck), and on slow devices a node that isn't there yet
+                // makes a wiped userdata look formatted, so it never gets formatted.
                 DeviceMapper& dm = DeviceMapper::Instance();
-                if (!dm.CreateDevice("bow", table)) {
-                    PERROR << "Failed to create bow device";
-                    return false;
-                }
-
                 std::string name;
-                if (!dm.GetDmDevicePathByName("bow", &name)) {
-                    PERROR << "Failed to get bow device name";
+                if (!dm.CreateDevice("bow", table, &name, 20s)) {
+                    PERROR << "Failed to create bow device";
                     return false;
                 }
 
